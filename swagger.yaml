@@ -1,0 +1,204 @@
+openapi: 3.0.0
+info:
+  title: BRB Booking Platform API
+  description: API for managing services, vendors, and bookings
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+tags:
+  - name: Bookings
+    description: Operations related to bookings
+  - name: Services
+    description: Operations related to services
+  - name: Vendors
+    description: Operations related to vendors
+  - name: Admin
+    description: Admin-only operations
+
+paths:
+  /admin/bookings:
+    post:
+      tags: [Admin, Bookings]
+      summary: Create a new booking (Admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '409':
+          description: Booking conflict
+
+  /customer/bookings:
+    post:
+      tags: [Bookings]
+      summary: Create a new booking (Customer)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+      responses:
+        '201':
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+
+    get:
+      tags: [Bookings]
+      summary: Get customer bookings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of customer bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+        '401':
+          description: Unauthorized
+
+  /api/summary/vendor/{id}:
+    get:
+      tags: [Bookings]
+      summary: Get vendor booking summary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Vendor booking summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VendorSummary'
+        '404':
+          description: Vendor not found
+
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+components:
+  schemas:
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        customer_id:
+          type: integer
+          example: 123
+        service_id:
+          type: integer
+          example: 456
+        vendor_id:
+          type: integer
+          example: 789
+        start_time:
+          type: string
+          format: date-time
+          example: "2023-07-25T09:00:00Z"
+        end_time:
+          type: string
+          format: date-time
+          example: "2023-07-25T10:00:00Z"
+        status:
+          type: string
+          enum: [pending, confirmed, completed]
+          example: pending
+
+    BookingRequest:
+      type: object
+      required:
+        - start_time
+        - end_time
+        - service_id
+        - vendor_id
+      properties:
+        start_time:
+          type: string
+          format: date-time
+          description: Start time in RFC3339 format
+          example: "2023-07-25T09:00:00Z"
+        end_time:
+          type: string
+          format: date-time
+          description: End time in RFC3339 format
+          example: "2023-07-25T10:00:00Z"
+        service_id:
+          type: integer
+          example: 456
+        vendor_id:
+          type: integer
+          example: 789
+
+    VendorSummary:
+      type: object
+      properties:
+        vendor_id:
+          type: integer
+          example: 789
+        total_bookings:
+          type: integer
+          example: 15
+        bookings_by_status:
+          type: object
+          properties:
+            pending:
+              type: integer
+              example: 5
+            confirmed:
+              type: integer
+              example: 8
+            completed:
+              type: integer
+              example: 2
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
